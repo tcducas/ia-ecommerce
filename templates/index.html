@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Atendimento IA</title>
+    <style>
+        /* Container flutuante no canto inferior direito */
+        #chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: sans-serif;
+            z-index: 1000;
+        }
+
+        #chat-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #chat-body {
+            display: none;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        #messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 10px;
+        }
+
+        .message.user { text-align: right; }
+        .message.bot { text-align: left; }
+
+        #input-area {
+            border-top: 1px solid #ddd;
+            padding: 8px;
+            display: flex;
+        }
+
+        #input-area input {
+            flex: 1;
+            padding: 6px;
+        }
+
+        #input-area button {
+            margin-left: 4px;
+            padding: 6px 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-widget">
+    <div id="chat-header">Suporte IA</div>
+    <div id="chat-body">
+        <div id="messages"></div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Escreva sua pergunta...">
+            <button id="send-btn">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const widget = document.getElementById('chat-widget');
+    const header = document.getElementById('chat-header');
+    const body = document.getElementById('chat-body');
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    header.addEventListener('click', () => {
+        body.style.display = body.style.display === 'block' ? 'none' : 'block';
+    });
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.classList.add('message', sender);
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage(text, 'user');
+        input.value = '';
+
+        try {
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+            const data = await res.json();
+            if (data.reply) {
+                addMessage(data.reply, 'bot');
+            } else {
+                addMessage('Erro ao obter resposta.', 'bot');
+            }
+        } catch (err) {
+            addMessage('Falha na comunicação.', 'bot');
+        }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keyup', e => {
+        if (e.key === 'Enter') sendMessage();
+    });
+</script>
+
+</body>
+</html>
